@@ -9,13 +9,16 @@ public class Solve {
 		if(test.findSolution(0))
 		{
 			System.out.println("Solution Trouve");
+			
+			test.afficherSolution();
 		}
 		else
 		{
 			System.out.println("Solution non Trouve");
+			System.out.println("Temps d'execution : oo");
 		}
-		//test.afficherSolution();
-		test.afficherBoard(test.board);
+		
+		//test.afficherBoard(test.board);
 	}
 
 }

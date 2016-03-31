@@ -6,15 +6,17 @@ public class Board {
 	final int PIONBLANC = 4;
 	final boolean BLANC = true;
 	final boolean NOIR = false;
-	final int HomeGroundValue = 150;
+	final int HomeGroundValue = -1500;
 	final int PieceAlmostWinValue = 150;
-	final int PieceColumnHoleValue = 5;
-	final int WinValue = 10000;
+	final int PieceColumnHoleValue = 500;
+	final int WinValue = 1000000;
 	final int VALUE_VOID = 0;
 	final int VALUE_PAWN = 5;
 	final int PieceConnectionHValue = 50;
 	final int PieceConnectionVValue = 50;
-
+	final int kEnnemyNumberValue = 500;
+	final int kDefenseValue = 50;
+	final int PieceDangerValue = 50;
 	Board[] CoupsPossible;
 	int[][] board = new int[8][8];
 	int nbrBlack = 0;
@@ -68,6 +70,8 @@ public class Board {
 	}
 	// Get the value of the board (heuristic)
 	public int GetValue(boolean color){
+		nbrBlack = 0;
+		nbrWhite = 0;
 		int Value = 0;
 	    for (byte x= 0; x < 8; x++){
 	    	int WhitePiecesOnColumn = 0;
@@ -77,33 +81,57 @@ public class Board {
 	            if (square == 0) continue;
 	            if (square == PIONBLANC)
 	            {
+	            	nbrWhite++;
+	            	WhitePiecesOnColumn++;
 	                Value += GetPieceValue(square, x, y);
 	                boolean ThreatA = false;
 	                boolean ThreatB = false;
-	                if(y == 0)
+	                if(color && y == 0)
 	                	{
 	                		WhiteWins = true;
 	                	}
-	                if(y == 0)Value += HomeGroundValue;
-	                if (x > 0 && y > 0) ThreatA = (this.GetPosition(y - 1, 7)==0);
-	                if (x < 7 && y < 7) ThreatB = (this.GetPosition(y + 1, 7)==0);
+	                if(!color && y == 8)
+	                {
+	                	BlackWins = true;
+                	}
+	                if(y == 0)
+	                	Value += HomeGroundValue;
+	                if (x > 0 && y > 0) 
+	                	ThreatA = (this.GetPosition(y - 1, 7)==0);
+	                if (x < 7 && y < 7) 
+	                	ThreatB = (this.GetPosition(y + 1, 7)==0);
 	                if (ThreatA && ThreatB) // almost win
 	                	Value += PieceAlmostWinValue;
-	    	        if (WhitePiecesOnColumn == 0)Value -= PieceColumnHoleValue;
-	    	        if (BlackPiecesOnColumn == 0)Value += PieceColumnHoleValue;
-	            } else{
-	                // Same for black, with inverted signs for NegaMax
+
+	            } 
+	            else if (square == PIONNOIR)
+	            {
+	            	nbrBlack++;
+	            	BlackPiecesOnColumn++;
+	                Value -= GetPieceValue(square, x, y);
+	                
+	                
+	            	
 	            }
+	            //Value += (nbrWhite - nbrBlack)*kEnnemyNumberValue;
+    	        if (WhitePiecesOnColumn == 0)
+    	        	Value -= PieceColumnHoleValue;
+    	        if (BlackPiecesOnColumn == 0)
+    	        	Value += PieceColumnHoleValue;
 	        }
 
 	    }
 	    // if no more material available
-	    if (nbrWhite == 0) BlackWins = true; 
-	    if (nbrBlack == 0) WhiteWins = true;
+	    if (nbrWhite == 0) 
+	    	BlackWins = true; 
+	    if (nbrBlack == 0) 
+	    	WhiteWins = true;
 
 	    // winning positions
-	    if (WhiteWins)Value += WinValue;
-	    if (BlackWins)Value -= WinValue;
+	    if (WhiteWins)
+	    	Value += WinValue;
+	    if (BlackWins)
+	    	Value -= WinValue;
 	    return Value;
 	}
 	// Get the value of the piece, depending on the position on the board
@@ -119,41 +147,44 @@ public class Board {
 		case(2):
 		case(4):
 			Value += VALUE_PAWN;
-			// add connections value
-	    	if ((Column > 0 && (board[Column-1][Row]) != 0) || (Column < 7 && board[Column+1][Row] != 0)) Value += PieceConnectionHValue;
-	    	if ((Row > 0 && board[Column][Row-1] != 0) || (Row < 7 && board[Column][Row+1] != 0)) Value += PieceConnectionVValue;
+			// Si on est connecté en H ou en V
+	    	if ((Column > 0 && (board[Column-1][Row]) != 0) || (Column < 7 && board[Column+1][Row] != 0)) 
+	    		Value += PieceConnectionHValue;
+	    	if ((Row > 0 && board[Column][Row-1] != 0) || (Row < 7 && board[Column][Row+1] != 0)) 
+	    		Value += PieceConnectionVValue;
 
 		break;
 		}
 	    
-	    //add to the value the protected value
-	    //Value += Piece.ProtectedValue;
-
-/*	    // evaluate attack
-	    if (Piece.AttackedValue > 0)
-	    {
-	        Value -= Piece.AttackedValue;
-	        if (Piece.ProtectedValue == 0)
-	            Value -= Piece.AttackedValue;
-	    }else{
-	        if (Piece.ProtectedValue != 0){
-	            if (Piece.PieceColor == White){
-	                if (Row == 5) Value += PieceDangerValue;
-	                else if (Row == 6) Value += PieceHighDangerValue;
-	            }else{
-	                if (Row == 2) Value += PieceDangerValue;
-	                else if (Row == 1) Value += PieceHighDangerValue;
-	            }
-	        }
-	    }
-	    // danger value
-	    if (Piece.PieceColor ==White)
-	        Value += Row * PieceDangerValue;
-	    else
+//	    //add to the value the protected value
+//	    Value += kDefenseValue;
+//
+//	    // evaluate attack
+//	    if (Piece.AttackedValue > 0)
+//	    {
+//	        Value -= Piece.AttackedValue;
+//	        if (Piece.ProtectedValue == 0)
+//	            Value -= Piece.AttackedValue;
+//	    }else{
+//	        if (Piece.ProtectedValue != 0){
+//	            if (Piece.PieceColor == White){
+//	                if (Row == 5) Value += PieceDangerValue;
+//	                else if (Row == 6) Value += PieceHighDangerValue;
+//	            }else{
+//	                if (Row == 2) Value += PieceDangerValue;
+//	                else if (Row == 1) Value += PieceHighDangerValue;
+//	            }
+//	        }
+//	    }
+		
+	    // Valeur de dangé
+	    if (square == PIONBLANC)
 	        Value += (8-Row) * PieceDangerValue;
+	    else
+	        Value += Row * PieceDangerValue;
 
-	    // mobility feature
-	    Value += Piece.ValidMoves.Count;*/
+//	    // mobility feature
+//	    Value += Piece.ValidMoves.Count;
 	    
 	    return Value;
 	}
@@ -180,6 +211,7 @@ public class Board {
 				if(GetPosition(x, y) == pawn)
 				{
 					try {
+						// Si emplacement vide
 						if(GetPosition(x,y+coef) == 0)
 						{
 							int[][] copyBoard = copyBoard();
@@ -192,7 +224,8 @@ public class Board {
 						//e.printStackTrace();
 					}
 					try {
-						if(GetPosition(x-1,y+coef) != 0 && GetPosition(x-1,y+coef) != pawn)
+						// Si on peut prendre en diagonale (gauche)
+						if(GetPosition(x-1,y+coef) != pawn)
 						{
 							int[][] copyBoard = copyBoard();
 							copyBoard[x][y] = 0;
@@ -204,7 +237,8 @@ public class Board {
 						//e.printStackTrace();
 					}
 					try {
-						if(GetPosition(x+1,y+coef) != 0 && GetPosition(x+1,y+coef) != pawn)
+						// Si on peut prendre en diagonale (droite)
+						if(GetPosition(x+1,y+coef) != pawn)
 						{
 							int[][] copyBoard = copyBoard();
 							copyBoard[x][y] = 0;
@@ -218,6 +252,10 @@ public class Board {
 				}
 			}
         }
+        //System.out.println("CAS POSSIBLES \n");
+        //for(Board x : Boards)
+        //	x.PrintBoard();
+        //System.out.println("\n\n");
         CoupsPossible = Boards.toArray(new Board[0]);
         return CoupsPossible;
 		

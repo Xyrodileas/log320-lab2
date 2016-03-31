@@ -6,7 +6,8 @@ import java.util.Hashtable;
 
 class Client {
 	
-	final static double TimeToMoveMs = 4000;
+	final static double TimeToMoveMs = 900;
+	final static int kNbrDeepMax = 5000;
 	
 	public static void main(String[] args) 
 	{
@@ -53,7 +54,7 @@ class Client {
                 newboard = new Board(board, isWhite);
 
                 // On lance l'alphabeta
-                Board bestBoard = AlphaBetaIterationEnProfondeur(newboard, 50000, isWhite);
+                Board bestBoard = AlphaBetaIterationEnProfondeur(newboard, kNbrDeepMax, isWhite);
                 
                 
                 String move = null;
@@ -150,7 +151,7 @@ class Client {
                 Board MyBoard = new Board(newboard.copyBoard(), isWhite);
                 
                 // On lance l'alphabeta
-                Board bestBoard = AlphaBetaIterationEnProfondeur(MyBoard, 50000, isWhite);
+                Board bestBoard = AlphaBetaIterationEnProfondeur(MyBoard, kNbrDeepMax, isWhite);
                 
                 String move = null;
                
@@ -178,7 +179,7 @@ class Client {
                 }
 				
 			}
-			// Le dernier coup est invalide -> TODO : Lever une exception
+			// Le dernier coup est invalide -> T0ODO : Lever une exception
 			if(cmd == '4'){
 				System.out.println("Coup invalide, entrez un nouveau coup : ");
 		       	String move = null;
@@ -205,15 +206,19 @@ class Client {
 		// On va incrémenter la profondeur max petit à petit, pour pouvoir stopper l'execution
 	    for (int Depth = 1; Depth < ProfondeurMax; Depth++)
 	    {
-	    	Board LastBoard = AlphaBetaRoot(Integer.MIN_VALUE, Integer.MAX_VALUE,Depth, board, false, WhosMove, startTime);
-	        long SecondTime = System.currentTimeMillis();
+	    	Board LastBoard = AlphaBetaRoot( Integer.MIN_VALUE, Integer.MAX_VALUE,  Depth, board, false, WhosMove, startTime);
+	    	
+	        if(BestBoard != null && BestBoard.GetValue(!WhosMove) < LastBoard.GetValue(!WhosMove))
+	        	BestBoard = LastBoard;
+	        if(BestBoard == null)
+	        	BestBoard = LastBoard;
+	    	long SecondTime = System.currentTimeMillis();
 	        // Calcul du temps écoulé
 	        double timer = SecondTime - startTime;
 	        // Si on a pris trop de temps, on break et on retourne le meilleurs plateau trouvé !
 	        if (timer >= TimeToMoveMs)
 	            break; 
-	        // Ajouter condition si le last est meilleurs ou pas
-	        BestBoard = LastBoard;
+
 	    }
 	    //Watch.Stop();
 	    System.out.println("Valeur choisis :" + BestBoard.GetValue(WhosMove));
@@ -226,12 +231,14 @@ class Client {
 			return null;
 		// On récupére les fils (Plateaux possibles depuis la position)
 		Board[] Successors = GetPossibleBoards(IsWhiteTurn, CurrentBoard);
-		double best;
+		double best = 0;
+		
 		Board nextPlay = null;
-		// On itère sur les fils
+		// On it�re sur les fils
 	    for (int i=0, c=Successors.length; i<c; i++)
 	    {
-	        best = -AlphaBeta(-beta, -alpha, remaining_depth - 1, Successors[i], overtime, !IsWhiteTurn);
+	        best = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
+	        
 	        nextPlay = Successors[i];
 	        if (best >= beta)
 	            return nextPlay;
@@ -243,36 +250,61 @@ class Client {
 	        double timefuck = SecondTime - timer;
 	        if (timefuck >= TimeToMoveMs)
 	            break; // timeout
+	        IsWhiteTurn = !IsWhiteTurn;
 	    }
+	    
 	    return nextPlay;
 	}
 	// Fonction d'alpha beta pour l'élagage
-	static int AlphaBeta(int alpha, int beta, int remaining_depth, Board CurrentBoard, boolean overtime, boolean IsWhiteTurn)
+	static int AlphaBeta(int alpha, int beta, int remaining_depth, Board CurrentBoard, boolean maximising, double timer, boolean IsWhiteTurn)
 	{
-		System.out.println("Noeud visité" +  CurrentBoard.GetValue(IsWhiteTurn));
-	    if (overtime)
-	        return 0;
-
+		int bestValue;
+	
+	    
+	    Board[] Successors = GetPossibleBoards(IsWhiteTurn, CurrentBoard);
+	    
 	    if (remaining_depth == 0 )
 	    {
 	        return CurrentBoard.GetValue(!IsWhiteTurn);
 	    }
-
+	    //
 	    
-	    Board[] Successors = GetPossibleBoards(IsWhiteTurn, CurrentBoard);
-	    for (int i=0, c=Successors.length; i<c; i++)
-	    {
-	        int score = -AlphaBeta(-beta, -alpha, remaining_depth - 1, Successors[i], overtime, !IsWhiteTurn);
-	        if (score >= beta)
-	        {
-	            return beta;
-	        }
-	        if (score > alpha)
-	        {
-	            alpha = score;
+	    else if (maximising) {
+	        bestValue = alpha;
+	        
+	        // Recurse for all children of node.
+	        for (int i=0, c=Successors.length; i<c; i++) {
+	        	//System.out.println("Noeud visit� " +  Successors[i].GetValue(IsWhiteTurn));
+	            int childValue = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn);
+	            bestValue = Math.max(bestValue, childValue);
+	            if (beta <= bestValue) {
+	                break;
+	            }
+	            long SecondTime = System.currentTimeMillis();
+		        double timefuck = SecondTime - timer;
+		        if (timefuck >= TimeToMoveMs)
+		            break; // timeout
 	        }
 	    }
-	    return alpha;
+	    else {
+	        bestValue = beta;
+	        
+	        // Recurse for all children of node.
+	        for (int i=0, c=Successors.length; i<c; i++) {
+	            int childValue = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
+	            bestValue = Math.min(bestValue, childValue);
+	            if (bestValue <= alpha) {
+	                break;
+	            }
+	            long SecondTime = System.currentTimeMillis();
+		        double timefuck = SecondTime - timer;
+		        if (timefuck >= TimeToMoveMs)
+		            break; // timeout
+	        }
+	    }
+	    //System.out.println("Noeud retourn� " +  bestValue);
+	    return bestValue;
+
 	}
 	
 

@@ -9,7 +9,7 @@ public class Board {
 	final int HomeGroundValue = -1500;
 	final int PieceAlmostWinValue = 150;
 	final int PieceColumnHoleValue = 500;
-	final int WinValue = 1000000;
+	final int WinValue = 100;
 	final int VALUE_VOID = 0;
 	final int VALUE_PAWN = 5;
 	final int PieceConnectionHValue = 50;

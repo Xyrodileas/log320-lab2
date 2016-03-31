@@ -6,7 +6,7 @@ import java.util.Hashtable;
 
 class Client {
 	
-	final static double TimeToMoveMs = 900;
+	final static double TimeToMoveMs = 4000;
 	final static int kNbrDeepMax = 5000;
 	
 	public static void main(String[] args) 
@@ -275,7 +275,7 @@ class Client {
 	        // Recurse for all children of node.
 	        for (int i=0, c=Successors.length; i<c; i++) {
 	        	//System.out.println("Noeud visité " +  Successors[i].GetValue(IsWhiteTurn));
-	            int childValue = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn);
+	            int childValue = AlphaBeta(bestValue, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn);
 	            bestValue = Math.max(bestValue, childValue);
 	            if (beta <= bestValue) {
 	                break;
@@ -291,7 +291,7 @@ class Client {
 	        
 	        // Recurse for all children of node.
 	        for (int i=0, c=Successors.length; i<c; i++) {
-	            int childValue = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
+	            int childValue = AlphaBeta(alpha, bestValue, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
 	            bestValue = Math.min(bestValue, childValue);
 	            if (bestValue <= alpha) {
 	                break;

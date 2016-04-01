@@ -9,14 +9,14 @@ public class Board {
 	final int HomeGroundValue = -1500;
 	final int PieceAlmostWinValue = 150;
 	final int PieceColumnHoleValue = 500;
-	final int WinValue = 100;
+	final int WinValue = 1000000;
 	final int VALUE_VOID = 0;
 	final int VALUE_PAWN = 5;
 	final int PieceConnectionHValue = 50;
-	final int PieceConnectionVValue = 50;
+	final int PieceConnectionVValue = -50;
 	final int kEnnemyNumberValue = 500;
 	final int kDefenseValue = 50;
-	final int PieceDangerValue = 50;
+	final int PieceDangerValue = 500;
 	Board[] CoupsPossible;
 	int[][] board = new int[8][8];
 	int nbrBlack = 0;
@@ -113,7 +113,7 @@ public class Board {
 	                
 	            	
 	            }
-	            //Value += (nbrWhite - nbrBlack)*kEnnemyNumberValue;
+	            Value += (nbrWhite - nbrBlack)*kEnnemyNumberValue;
     	        if (WhitePiecesOnColumn == 0)
     	        	Value -= PieceColumnHoleValue;
     	        if (BlackPiecesOnColumn == 0)
@@ -252,10 +252,6 @@ public class Board {
 				}
 			}
         }
-        //System.out.println("CAS POSSIBLES \n");
-        //for(Board x : Boards)
-        //	x.PrintBoard();
-        //System.out.println("\n\n");
         CoupsPossible = Boards.toArray(new Board[0]);
         return CoupsPossible;
 		

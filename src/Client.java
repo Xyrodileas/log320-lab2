@@ -6,7 +6,7 @@ import java.util.Hashtable;
 
 class Client {
 	
-	final static double TimeToMoveMs = 4000;
+	final static double TimeToMoveMs = 900;
 	final static int kNbrDeepMax = 5000;
 	
 	public static void main(String[] args) 
@@ -221,7 +221,7 @@ class Client {
 
 	    }
 	    //Watch.Stop();
-	    System.out.println("Valeur choisis :" + BestBoard.GetValue(WhosMove));
+	    System.out.println("Valeur choisis :" + BestBoard.GetValue(WhosMove)+ "\n\n------------\n------------\n------------");
 	    return BestBoard;	    
 	}
 	// FOnction racine pour le lancement de l'alpha beta
@@ -231,26 +231,20 @@ class Client {
 			return null;
 		// On r√©cup√©re les fils (Plateaux possibles depuis la position)
 		Board[] Successors = GetPossibleBoards(IsWhiteTurn, CurrentBoard);
-		double best = 0;
+		double best = Integer.MIN_VALUE;
 		
 		Board nextPlay = null;
 		// On itËre sur les fils
 	    for (int i=0, c=Successors.length; i<c; i++)
 	    {
-	        best = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
+	        int newbest = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
 	        
-	        nextPlay = Successors[i];
-	        if (best >= beta)
-	            return nextPlay;
-	        if (best > alpha)
+	        if(nextPlay == null || best < newbest)
 	        {
-	            alpha = (int) best;
+	        	best = newbest;
+	        	nextPlay = Successors[i];
 	        }
-	        long SecondTime = System.currentTimeMillis();
-	        double timefuck = SecondTime - timer;
-	        if (timefuck >= TimeToMoveMs)
-	            break; // timeout
-	        IsWhiteTurn = !IsWhiteTurn;
+
 	    }
 	    
 	    return nextPlay;
@@ -276,6 +270,7 @@ class Client {
 	        for (int i=0, c=Successors.length; i<c; i++) {
 	        	//System.out.println("Noeud visitÈ " +  Successors[i].GetValue(IsWhiteTurn));
 	            int childValue = AlphaBeta(bestValue, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn);
+	            //System.out.println("Child value " +  childValue);
 	            bestValue = Math.max(bestValue, childValue);
 	            if (beta <= bestValue) {
 	                break;
@@ -291,8 +286,12 @@ class Client {
 	        
 	        // Recurse for all children of node.
 	        for (int i=0, c=Successors.length; i<c; i++) {
+	        	
 	            int childValue = AlphaBeta(alpha, bestValue, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
 	            bestValue = Math.min(bestValue, childValue);
+	            //System.out.println("Noeud visitÈ " +  Successors[i].GetValue(IsWhiteTurn));
+	            //System.out.println("Child value " +  childValue);
+	            
 	            if (bestValue <= alpha) {
 	                break;
 	            }
@@ -302,7 +301,7 @@ class Client {
 		            break; // timeout
 	        }
 	    }
-	    //System.out.println("Noeud retournÈ " +  bestValue);
+	    System.out.println("Best child value " +  bestValue + " Needed Max ? " + maximising + "\n------");
 	    return bestValue;
 
 	}

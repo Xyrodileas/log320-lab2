@@ -7,7 +7,8 @@ import java.util.Hashtable;
 class Client {
 	
 	final static double TimeToMoveMs = 900;
-	final static int kNbrDeepMax = 5000;
+	final static int kNbrDeepMax = 50000;
+	final static float kCostDeeper = 0.90f;
 	
 	public static void main(String[] args) 
 	{
@@ -90,16 +91,10 @@ class Client {
                         y++;
                     }
                 }
-                newboard = new Board(board, !isWhite);
+                newboard = new Board(board, isWhite);
                 
-                
-                //Board[] boards = GetPossibleBoards(isWhite, MyBoard);
-                //int choosen = (int) (Math.random()*boards.length);
-                
-                
-                String move = null;
-                //System.out.println("Nouveau : \n");
-                //newboard = boards[choosen];
+
+				output.flush();
                 
             }
 
@@ -119,8 +114,7 @@ class Client {
                 int x=0,y=0;
 
                 int origineX = ((int)(boardValues[0].toCharArray())[0])-65;
-                
-                String tmp =""+ boardValues[0].toCharArray()[1];
+                                String tmp =""+ boardValues[0].toCharArray()[1];
                 int origineY = 8-Integer.parseInt(tmp);
                 
                 int destX = ((int)(boardValues[2].toCharArray())[0])-65;
@@ -170,12 +164,10 @@ class Client {
                 if(Winner == 1)
                 {
                 	System.out.println("Blanc Win");
-                	return;
                 }
                 else if(Winner == 2)
                 {
                 	System.out.println("Noir Win");
-                	return;
                 }
 				
 			}
@@ -206,9 +198,9 @@ class Client {
 		// On va incr√©menter la profondeur max petit √† petit, pour pouvoir stopper l'execution
 	    for (int Depth = 1; Depth < ProfondeurMax; Depth++)
 	    {
-	    	Board LastBoard = AlphaBetaRoot( Integer.MIN_VALUE, Integer.MAX_VALUE,  Depth, board, false, WhosMove, startTime);
-	    	
-	        if(BestBoard != null && BestBoard.GetValue(!WhosMove) < LastBoard.GetValue(!WhosMove))
+	    	Board LastBoard = AlphaBetaRoot( Integer.MIN_VALUE, Integer.MAX_VALUE,  Depth, board, true, WhosMove, startTime);
+	    	//System.out.println("Guess " +  LastBoard);
+	        if(BestBoard != null && LastBoard != null && BestBoard.GetValue(WhosMove) < LastBoard.GetValue(WhosMove))
 	        	BestBoard = LastBoard;
 	        if(BestBoard == null)
 	        	BestBoard = LastBoard;
@@ -222,31 +214,44 @@ class Client {
 	    }
 	    //Watch.Stop();
 	    System.out.println("Valeur choisis :" + BestBoard.GetValue(WhosMove)+ "\n\n------------\n------------\n------------");
+	    BestBoard.PrintBoard();
 	    return BestBoard;	    
 	}
 	// FOnction racine pour le lancement de l'alpha beta
 	static Board AlphaBetaRoot(int alpha, int beta, int remaining_depth, Board CurrentBoard, boolean overtime, boolean IsWhiteTurn, double timer)
 	{
-		if (overtime)
+		if(remaining_depth == 1)
 			return null;
 		// On r√©cup√©re les fils (Plateaux possibles depuis la position)
 		Board[] Successors = GetPossibleBoards(IsWhiteTurn, CurrentBoard);
-		double best = Integer.MIN_VALUE;
+		int best = Integer.MAX_VALUE;
 		
 		Board nextPlay = null;
+		//System.out.println("Current value " +  CurrentBoard.GetValue(IsWhiteTurn));
+		//CurrentBoard.PrintBoard();
 		// On itËre sur les fils
 	    for (int i=0, c=Successors.length; i<c; i++)
 	    {
-	        int newbest = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
-	        
+	        int newbest = AlphaBeta(alpha, beta, remaining_depth - 1, Successors[i], false, timer, IsWhiteTurn);
+	        //System.out.println("\tchild "+ i +" value " +  newbest);
+	        //Successors[i].PrintBoard();
 	        if(nextPlay == null || best < newbest)
 	        {
+	        	//System.out.println("\tNewBest value " +  Successors[i].GetValue(IsWhiteTurn));
 	        	best = newbest;
 	        	nextPlay = Successors[i];
 	        }
+	        if(best == newbest)
+	        {
+	        	if(Successors[i].GetValue(IsWhiteTurn) >  nextPlay.GetValue(IsWhiteTurn))
+	        	{
+	        		best = newbest;
+		        	nextPlay = Successors[i];
+	        	}
+	        }
 
 	    }
-	    
+	    //System.out.println("Valeur Guest " +  nextPlay.GetValue(IsWhiteTurn));
 	    return nextPlay;
 	}
 	// Fonction d'alpha beta pour l'√©lagage
@@ -259,7 +264,7 @@ class Client {
 	    
 	    if (remaining_depth == 0 )
 	    {
-	        return CurrentBoard.GetValue(!IsWhiteTurn);
+	        return CurrentBoard.GetValue(IsWhiteTurn);
 	    }
 	    //
 	    
@@ -269,7 +274,7 @@ class Client {
 	        // Recurse for all children of node.
 	        for (int i=0, c=Successors.length; i<c; i++) {
 	        	//System.out.println("Noeud visitÈ " +  Successors[i].GetValue(IsWhiteTurn));
-	            int childValue = AlphaBeta(bestValue, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn);
+	            int childValue = (int) (kCostDeeper*AlphaBeta(bestValue, beta, remaining_depth - 1, Successors[i], false, timer, !IsWhiteTurn));
 	            //System.out.println("Child value " +  childValue);
 	            bestValue = Math.max(bestValue, childValue);
 	            if (beta <= bestValue) {
@@ -287,7 +292,7 @@ class Client {
 	        // Recurse for all children of node.
 	        for (int i=0, c=Successors.length; i<c; i++) {
 	        	
-	            int childValue = AlphaBeta(alpha, bestValue, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn);
+	            int childValue = (int) (kCostDeeper*AlphaBeta(alpha, bestValue, remaining_depth - 1, Successors[i], true, timer, !IsWhiteTurn));
 	            bestValue = Math.min(bestValue, childValue);
 	            //System.out.println("Noeud visitÈ " +  Successors[i].GetValue(IsWhiteTurn));
 	            //System.out.println("Child value " +  childValue);
@@ -301,7 +306,7 @@ class Client {
 		            break; // timeout
 	        }
 	    }
-	    System.out.println("Best child value " +  bestValue + " Needed Max ? " + maximising + "\n------");
+	    //System.out.println("Best child value " +  bestValue + " Needed Max ? " + maximising + "\n------");
 	    return bestValue;
 
 	}
